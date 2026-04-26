@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/hashicorp/go-hclog"
 	plugin "github.com/heptaliane/katarive-body-content-source-plugin"
 	pb "github.com/heptaliane/katarive-go-sdk/gen/pb/plugin/v1"
 	"google.golang.org/protobuf/testing/protocmp"
@@ -17,7 +18,7 @@ import (
 func TestGetSourceServiceMetadata(t *testing.T) {
 	t.Parallel()
 
-	p := new(plugin.BodyContentSourceService)
+	p := &plugin.BodyContentSourceService{Logger: hclog.New(nil)}
 
 	expected := &pb.GetSourceServiceMetadataResponse{
 		Name:             "body-content",
@@ -52,7 +53,7 @@ func TestGetSource(t *testing.T) {
 		w.Write(data)
 	}))
 
-	p := new(plugin.BodyContentSourceService)
+	p := &plugin.BodyContentSourceService{Logger: hclog.New(nil)}
 
 	cases := map[string]struct {
 		path             string

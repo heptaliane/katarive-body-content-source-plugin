@@ -20,14 +20,14 @@ const SUPPORTED_PATTERN string = "^https?://.*"
 
 type BodyContentSourceService struct {
 	pb.UnimplementedSourceServiceServer
-	logger hclog.Logger
+	Logger hclog.Logger
 }
 
 func (s *BodyContentSourceService) GetSourceServiceMetadata(
 	ctx context.Context,
 	req *pb.GetSourceServiceMetadataRequest,
 ) (*pb.GetSourceServiceMetadataResponse, error) {
-	s.logger.Trace("GetSourceServiceMetadata called")
+	s.Logger.Trace("GetSourceServiceMetadata called")
 	return &pb.GetSourceServiceMetadataResponse{
 		Name:             NAME,
 		Version:          VERSION,
@@ -38,7 +38,7 @@ func (s *BodyContentSourceService) GetSource(
 	ctx context.Context,
 	req *pb.GetSourceRequest,
 ) (*pb.GetSourceResponse, error) {
-	s.logger.Trace("GetSource called", "url", req.GetUrl())
+	s.Logger.Trace("GetSource called", "url", req.GetUrl())
 	res, err := http.Get(req.GetUrl())
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func main() {
 		Plugins: map[string]plugin.Plugin{
 			"source": &katarive.SourcePlugin{
 				Impl: &BodyContentSourceService{
-					logger: logger,
+					Logger: logger,
 				},
 			},
 		},
