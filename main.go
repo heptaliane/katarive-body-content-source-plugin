@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -12,6 +14,8 @@ import (
 	"github.com/hashicorp/go-plugin"
 	katarive "github.com/heptaliane/katarive-go-sdk"
 	pb "github.com/heptaliane/katarive-go-sdk/gen/pb/plugin/v1"
+	"golang.org/x/net/html/charset"
+	"golang.org/x/text/transform"
 )
 
 const NAME string = "body-content"
@@ -49,7 +53,8 @@ func (s *BodyContentSourceService) GetSource(
 		return nil, &ResponseStatusError{url: req.GetUrl(), code: res.StatusCode}
 	}
 
-	doc, err := goquery.NewDocumentFromReader(res.Body)
+	body := UTF8Body(res)
+	doc, err := goquery.NewDocumentFromReader(body)
 	if err != nil {
 		return nil, err
 	}
@@ -78,6 +83,14 @@ func (e *ResponseStatusError) Error() string {
 
 // Ensure ResponseStatusError implements error
 var _ error = new(ResponseStatusError)
+
+// helpers
+func UTF8Body(res *http.Response) io.Reader {
+	reader := bufio.NewReader(res.Body)
+	head, _ := reader.Peek(1024)
+	enc, _, _ := charset.DetermineEncoding(head, res.Header.Get("Content-Type"))
+	return transform.NewReader(reader, enc.NewDecoder())
+}
 
 func main() {
 	logger := hclog.New(&hclog.LoggerOptions{
