@@ -74,6 +74,14 @@ func TestGetSource(t *testing.T) {
 			},
 			isError: false,
 		},
+		"with-ruby": {
+			path: "testdata/with-ruby.html",
+			expectedResponse: &pb.GetSourceResponse{
+				Content: "ruby",
+				Title:   "title",
+			},
+			isError: false,
+		},
 		"with-script": {
 			path: "testdata/with-script.html",
 			expectedResponse: &pb.GetSourceResponse{

@@ -61,6 +61,10 @@ func (s *BodyContentSourceService) GetSource(
 
 	title := strings.TrimSpace(doc.Find("title").Text())
 	doc.Find("head,script,noscript,style,iframe,header,footer").Remove()
+	doc.Find("ruby").Each(func(_ int, s *goquery.Selection) {
+		text := s.Find("rt").Text()
+		s.ReplaceWithHtml(text)
+	})
 	content := strings.TrimSpace(doc.Text())
 
 	return &pb.GetSourceResponse{
