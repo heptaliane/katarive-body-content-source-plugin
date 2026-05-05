@@ -21,6 +21,7 @@ import (
 const NAME string = "body-content"
 const VERSION string = "v1"
 const SUPPORTED_PATTERN string = "^https?://.*"
+const USER_AGENT string = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"
 
 type BodyContentSourceService struct {
 	pb.UnimplementedSourceServiceServer
@@ -43,7 +44,14 @@ func (s *BodyContentSourceService) GetSource(
 	req *pb.GetSourceRequest,
 ) (*pb.GetSourceResponse, error) {
 	s.Logger.Trace("GetSource called", "url", req.GetUrl())
-	res, err := http.Get(req.GetUrl())
+	sreq, err := http.NewRequest("GET", req.GetUrl(), nil)
+	if err != nil {
+		return nil, err
+	}
+	sreq.Header.Set("User-Agent", USER_AGENT)
+
+	client := &http.Client{}
+	res, err := client.Do(sreq)
 	if err != nil {
 		return nil, err
 	}
