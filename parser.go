@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bufio"
+	"io"
 	"net/http"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"golang.org/x/net/html/charset"
+	"golang.org/x/text/transform"
 )
 
 const USER_AGENT string = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"
@@ -50,4 +54,12 @@ func NewSourceParser(url string) (*SourceParser, error) {
 	}
 
 	return &SourceParser{doc: doc}, nil
+}
+
+// helpers
+func UTF8Body(res *http.Response) io.Reader {
+	reader := bufio.NewReader(res.Body)
+	head, _ := reader.Peek(1024)
+	enc, _, _ := charset.DetermineEncoding(head, res.Header.Get("Content-Type"))
+	return transform.NewReader(reader, enc.NewDecoder())
 }
