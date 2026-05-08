@@ -133,3 +133,126 @@ func TestGetSource(t *testing.T) {
 		ts.Close()
 	})
 }
+func TestListSources(t *testing.T) {
+	t.Parallel()
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		data, err := os.ReadFile(fmt.Sprintf(".%s", r.URL.Path))
+		if err != nil {
+			http.Error(w, "Not Found", http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	}))
+
+	p := &BodyContentSourceService{Logger: hclog.New(nil)}
+
+	cases := map[string]struct {
+		path             string
+		expectedResponse *pb.ListSourcesResponse
+		isError          bool
+	}{
+		"no-title": {
+			path: "testdata/no-title.html",
+			expectedResponse: &pb.ListSourcesResponse{
+				Sources: []*pb.SourceInfo{
+					{
+						Id:  0,
+						Url: fmt.Sprintf("%s/%s", ts.URL, "testdata/no-title.html"),
+					},
+				},
+			},
+			isError: false,
+		},
+		"text-only": {
+			path: "testdata/text-only.html",
+			expectedResponse: &pb.ListSourcesResponse{
+				Name: "title",
+				Sources: []*pb.SourceInfo{
+					{
+						Id:    0,
+						Title: "title",
+						Url:   fmt.Sprintf("%s/%s", ts.URL, "testdata/text-only.html"),
+					},
+				},
+			},
+			isError: false,
+		},
+		"with-ruby": {
+			path: "testdata/with-ruby.html",
+			expectedResponse: &pb.ListSourcesResponse{
+				Name: "title",
+				Sources: []*pb.SourceInfo{
+					{
+						Id:    0,
+						Title: "title",
+						Url:   fmt.Sprintf("%s/%s", ts.URL, "testdata/with-ruby.html"),
+					},
+				},
+			},
+			isError: false,
+		},
+		"with-script": {
+			path: "testdata/with-script.html",
+			expectedResponse: &pb.ListSourcesResponse{
+				Name: "title",
+				Sources: []*pb.SourceInfo{
+					{
+						Id:    0,
+						Title: "title",
+						Url:   fmt.Sprintf("%s/%s", ts.URL, "testdata/with-script.html"),
+					},
+				},
+			},
+			isError: false,
+		},
+		"not-html": {
+			path: "testdata/not-html.txt",
+			expectedResponse: &pb.ListSourcesResponse{
+				Sources: []*pb.SourceInfo{
+					{
+						Id:  0,
+						Url: fmt.Sprintf("%s/%s", ts.URL, "testdata/not-html.txt"),
+					},
+				},
+			},
+			isError: false,
+		},
+		"not-found": {
+			path:    "testdata/not-found.html",
+			isError: true,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			req := &pb.ListSourcesRequest{
+				Url: fmt.Sprintf("%s/%s", ts.URL, tc.path),
+			}
+			ctx := context.Background()
+			data, err := p.ListSources(ctx, req)
+			if tc.isError {
+				if err == nil {
+					t.Error("Error expected but got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Errorf("Unexpected error: %v", err)
+				return
+			}
+			if diff := cmp.Diff(data, tc.expectedResponse, protocmp.Transform()); diff != "" {
+				t.Errorf("Unmatched response: %v", diff)
+				return
+			}
+		})
+	}
+
+	t.Cleanup(func() {
+		ts.Close()
+	})
+}

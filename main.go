@@ -7,9 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
 	katarive "github.com/heptaliane/katarive-go-sdk"
@@ -21,7 +19,6 @@ import (
 const NAME string = "body-content"
 const VERSION string = "v1"
 const SUPPORTED_PATTERN string = "^https?://.*"
-const USER_AGENT string = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"
 
 type BodyContentSourceService struct {
 	pb.UnimplementedSourceServiceServer
@@ -44,40 +41,32 @@ func (s *BodyContentSourceService) GetSource(
 	req *pb.GetSourceRequest,
 ) (*pb.GetSourceResponse, error) {
 	s.Logger.Trace("GetSource called", "url", req.GetUrl())
-	sreq, err := http.NewRequest("GET", req.GetUrl(), nil)
+	parser, err := NewSourceParser(req.GetUrl())
 	if err != nil {
 		return nil, err
 	}
-	sreq.Header.Set("User-Agent", USER_AGENT)
-
-	client := &http.Client{}
-	res, err := client.Do(sreq)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return nil, &ResponseStatusError{url: req.GetUrl(), code: res.StatusCode}
-	}
-
-	body := UTF8Body(res)
-	doc, err := goquery.NewDocumentFromReader(body)
-	if err != nil {
-		return nil, err
-	}
-
-	title := strings.TrimSpace(doc.Find("title").Text())
-	doc.Find("head,script,noscript,style,iframe,header,footer").Remove()
-	doc.Find("ruby").Each(func(_ int, s *goquery.Selection) {
-		text := s.Find("rt").Text()
-		s.ReplaceWithHtml(text)
-	})
-	content := strings.TrimSpace(doc.Text())
 
 	return &pb.GetSourceResponse{
-		Title:   title,
-		Content: content,
+		Title:   parser.Title(),
+		Content: parser.Content(),
+	}, nil
+}
+func (s *BodyContentSourceService) ListSources(
+	ctx context.Context,
+	req *pb.ListSourcesRequest,
+) (*pb.ListSourcesResponse, error) {
+	url := req.GetUrl()
+	parser, err := NewSourceParser(url)
+	if err != nil {
+		return nil, err
+	}
+
+	title := parser.Title()
+	return &pb.ListSourcesResponse{
+		Name: title,
+		Sources: []*pb.SourceInfo{
+			{Id: 0, Title: title, Url: url},
+		},
 	}, nil
 }
 
