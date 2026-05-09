@@ -31,37 +31,40 @@ func (s *BodyContentSourceService) GetSourceServiceMetadata(
 		SupportedPattern: SUPPORTED_PATTERN,
 	}, nil
 }
-func (s *BodyContentSourceService) GetSource(
+func (s *BodyContentSourceService) GetSourceItem(
 	ctx context.Context,
-	req *pb.GetSourceRequest,
-) (*pb.GetSourceResponse, error) {
-	s.Logger.Trace("GetSource called", "url", req.GetUrl())
-	parser, err := NewSourceParser(req.GetUrl())
+	req *pb.GetSourceItemRequest,
+) (*pb.GetSourceItemResponse, error) {
+	url := req.GetUrl()
+	s.Logger.Trace("GetSource called", "url", url)
+
+	parser, err := NewSourceItemParser(url)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.GetSourceResponse{
-		Title:   parser.Title(),
-		Content: parser.Content(),
+	return &pb.GetSourceItemResponse{
+		Item: &pb.SourceItem{
+			Id:      parser.Id(),
+			Url:     parser.Url(),
+			Title:   parser.Title(),
+			Content: parser.Content(),
+		},
 	}, nil
 }
-func (s *BodyContentSourceService) ListSources(
+func (s *BodyContentSourceService) GetSourceCollection(
 	ctx context.Context,
-	req *pb.ListSourcesRequest,
-) (*pb.ListSourcesResponse, error) {
+	req *pb.GetSourceCollectionRequest,
+) (*pb.GetSourceCollectionResponse, error) {
 	url := req.GetUrl()
-	parser, err := NewSourceParser(url)
+	parser, err := NewSourceCollectionParser(url)
 	if err != nil {
 		return nil, err
 	}
 
-	title := parser.Title()
-	return &pb.ListSourcesResponse{
-		Name: title,
-		Sources: []*pb.SourceInfo{
-			{Id: 0, Title: title, Url: url},
-		},
+	return &pb.GetSourceCollectionResponse{
+		Collection: parser.Collection(),
+		Sources:    parser.Sources(),
 	}, nil
 }
 

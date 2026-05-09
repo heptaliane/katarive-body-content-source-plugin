@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -37,8 +39,7 @@ func TestGetSourceServiceMetadata(t *testing.T) {
 		return
 	}
 }
-
-func TestGetSource(t *testing.T) {
+func TestGetSourceItem(t *testing.T) {
 	t.Parallel()
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -56,44 +57,64 @@ func TestGetSource(t *testing.T) {
 
 	cases := map[string]struct {
 		path             string
-		expectedResponse *pb.GetSourceResponse
+		expectedResponse *pb.GetSourceItemResponse
 		isError          bool
 	}{
 		"no-title": {
 			path: "testdata/no-title.html",
-			expectedResponse: &pb.GetSourceResponse{
-				Content: "content",
+			expectedResponse: &pb.GetSourceItemResponse{
+				Item: &pb.SourceItem{
+					Id:      getId(t, ts.URL, "testdata/no-title.html"),
+					Url:     fmt.Sprintf("%s/%s", ts.URL, "testdata/no-title.html"),
+					Content: "content",
+				},
 			},
 			isError: false,
 		},
 		"text-only": {
 			path: "testdata/text-only.html",
-			expectedResponse: &pb.GetSourceResponse{
-				Content: "content",
-				Title:   "title",
+			expectedResponse: &pb.GetSourceItemResponse{
+				Item: &pb.SourceItem{
+					Id:      getId(t, ts.URL, "testdata/text-only.html"),
+					Url:     fmt.Sprintf("%s/%s", ts.URL, "testdata/text-only.html"),
+					Title:   "title",
+					Content: "content",
+				},
 			},
 			isError: false,
 		},
 		"with-ruby": {
 			path: "testdata/with-ruby.html",
-			expectedResponse: &pb.GetSourceResponse{
-				Content: "ruby",
-				Title:   "title",
+			expectedResponse: &pb.GetSourceItemResponse{
+				Item: &pb.SourceItem{
+					Id:      getId(t, ts.URL, "testdata/with-ruby.html"),
+					Url:     fmt.Sprintf("%s/%s", ts.URL, "testdata/with-ruby.html"),
+					Title:   "title",
+					Content: "ruby",
+				},
 			},
 			isError: false,
 		},
 		"with-script": {
 			path: "testdata/with-script.html",
-			expectedResponse: &pb.GetSourceResponse{
-				Content: "content",
-				Title:   "title",
+			expectedResponse: &pb.GetSourceItemResponse{
+				Item: &pb.SourceItem{
+					Id:      getId(t, ts.URL, "testdata/with-script.html"),
+					Url:     fmt.Sprintf("%s/%s", ts.URL, "testdata/with-script.html"),
+					Title:   "title",
+					Content: "content",
+				},
 			},
 			isError: false,
 		},
 		"not-html": {
 			path: "testdata/not-html.txt",
-			expectedResponse: &pb.GetSourceResponse{
-				Content: "Not a html",
+			expectedResponse: &pb.GetSourceItemResponse{
+				Item: &pb.SourceItem{
+					Id:      getId(t, ts.URL, "testdata/not-html.txt"),
+					Url:     fmt.Sprintf("%s/%s", ts.URL, "testdata/not-html.txt"),
+					Content: "Not a html",
+				},
 			},
 			isError: false,
 		},
@@ -107,11 +128,11 @@ func TestGetSource(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			req := &pb.GetSourceRequest{
+			req := &pb.GetSourceItemRequest{
 				Url: fmt.Sprintf("%s/%s", ts.URL, tc.path),
 			}
 			ctx := context.Background()
-			data, err := p.GetSource(ctx, req)
+			data, err := p.GetSourceItem(ctx, req)
 			if tc.isError {
 				if err == nil {
 					t.Error("Error expected but got nil")
@@ -133,7 +154,7 @@ func TestGetSource(t *testing.T) {
 		ts.Close()
 	})
 }
-func TestListSources(t *testing.T) {
+func TestGetSourceCollection(t *testing.T) {
 	t.Parallel()
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -151,15 +172,15 @@ func TestListSources(t *testing.T) {
 
 	cases := map[string]struct {
 		path             string
-		expectedResponse *pb.ListSourcesResponse
+		expectedResponse *pb.GetSourceCollectionResponse
 		isError          bool
 	}{
 		"no-title": {
 			path: "testdata/no-title.html",
-			expectedResponse: &pb.ListSourcesResponse{
-				Sources: []*pb.SourceInfo{
+			expectedResponse: &pb.GetSourceCollectionResponse{
+				Sources: []*pb.SourceSummary{
 					{
-						Id:  0,
+						Id:  getId(t, ts.URL, "testdata/no-title.html"),
 						Url: fmt.Sprintf("%s/%s", ts.URL, "testdata/no-title.html"),
 					},
 				},
@@ -168,13 +189,12 @@ func TestListSources(t *testing.T) {
 		},
 		"text-only": {
 			path: "testdata/text-only.html",
-			expectedResponse: &pb.ListSourcesResponse{
-				Name: "title",
-				Sources: []*pb.SourceInfo{
+			expectedResponse: &pb.GetSourceCollectionResponse{
+				Sources: []*pb.SourceSummary{
 					{
-						Id:    0,
-						Title: "title",
+						Id:    getId(t, ts.URL, "testdata/text-only.html"),
 						Url:   fmt.Sprintf("%s/%s", ts.URL, "testdata/text-only.html"),
+						Title: "title",
 					},
 				},
 			},
@@ -182,13 +202,12 @@ func TestListSources(t *testing.T) {
 		},
 		"with-ruby": {
 			path: "testdata/with-ruby.html",
-			expectedResponse: &pb.ListSourcesResponse{
-				Name: "title",
-				Sources: []*pb.SourceInfo{
+			expectedResponse: &pb.GetSourceCollectionResponse{
+				Sources: []*pb.SourceSummary{
 					{
-						Id:    0,
-						Title: "title",
+						Id:    getId(t, ts.URL, "testdata/with-ruby.html"),
 						Url:   fmt.Sprintf("%s/%s", ts.URL, "testdata/with-ruby.html"),
+						Title: "title",
 					},
 				},
 			},
@@ -196,13 +215,12 @@ func TestListSources(t *testing.T) {
 		},
 		"with-script": {
 			path: "testdata/with-script.html",
-			expectedResponse: &pb.ListSourcesResponse{
-				Name: "title",
-				Sources: []*pb.SourceInfo{
+			expectedResponse: &pb.GetSourceCollectionResponse{
+				Sources: []*pb.SourceSummary{
 					{
-						Id:    0,
-						Title: "title",
+						Id:    getId(t, ts.URL, "testdata/with-script.html"),
 						Url:   fmt.Sprintf("%s/%s", ts.URL, "testdata/with-script.html"),
+						Title: "title",
 					},
 				},
 			},
@@ -210,10 +228,10 @@ func TestListSources(t *testing.T) {
 		},
 		"not-html": {
 			path: "testdata/not-html.txt",
-			expectedResponse: &pb.ListSourcesResponse{
-				Sources: []*pb.SourceInfo{
+			expectedResponse: &pb.GetSourceCollectionResponse{
+				Sources: []*pb.SourceSummary{
 					{
-						Id:  0,
+						Id:  getId(t, ts.URL, "testdata/not-html.txt"),
 						Url: fmt.Sprintf("%s/%s", ts.URL, "testdata/not-html.txt"),
 					},
 				},
@@ -230,11 +248,11 @@ func TestListSources(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			req := &pb.ListSourcesRequest{
+			req := &pb.GetSourceCollectionRequest{
 				Url: fmt.Sprintf("%s/%s", ts.URL, tc.path),
 			}
 			ctx := context.Background()
-			data, err := p.ListSources(ctx, req)
+			data, err := p.GetSourceCollection(ctx, req)
 			if tc.isError {
 				if err == nil {
 					t.Error("Error expected but got nil")
@@ -255,4 +273,11 @@ func TestListSources(t *testing.T) {
 	t.Cleanup(func() {
 		ts.Close()
 	})
+}
+func getId(t *testing.T, base, path string) string {
+	t.Helper()
+
+	url := fmt.Sprintf("%s/%s", base, path)
+	hash := sha256.Sum256([]byte(url))
+	return hex.EncodeToString(hash[:])
 }

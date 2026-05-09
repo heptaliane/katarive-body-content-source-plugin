@@ -7,7 +7,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/go-plugin v1.7.0
-	github.com/heptaliane/katarive-go-sdk v0.0.17
+	github.com/heptaliane/katarive-go-sdk v0.0.18
 	golang.org/x/net v0.53.0
 	golang.org/x/text v0.36.0
 	google.golang.org/protobuf v1.36.11
