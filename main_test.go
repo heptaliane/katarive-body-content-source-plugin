@@ -22,9 +22,10 @@ func TestGetSourceServiceMetadata(t *testing.T) {
 	p := &BodyContentSourceService{Logger: hclog.New(nil)}
 
 	expected := &pb.GetSourceServiceMetadataResponse{
-		Name:             "body-content",
-		Version:          "v1",
-		SupportedPattern: "^https?://.*",
+		Name:                       "body-content",
+		Version:                    "v1",
+		SupportedItemPattern:       "^https?://.*",
+		SupportedCollectionPattern: "^https?://.*",
 	}
 
 	ctx := context.Background()
