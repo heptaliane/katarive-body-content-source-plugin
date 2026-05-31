@@ -26,10 +26,9 @@ func (s *BodyContentSourceService) GetSourceServiceMetadata(
 ) (*pb.GetSourceServiceMetadataResponse, error) {
 	s.Logger.Trace("GetSourceServiceMetadata called")
 	return &pb.GetSourceServiceMetadataResponse{
-		Name:                       NAME,
-		Version:                    VERSION,
-		SupportedItemPattern:       SUPPORTED_PATTERN,
-		SupportedCollectionPattern: SUPPORTED_PATTERN,
+		Name:             NAME,
+		Version:          VERSION,
+		SupportedPattern: SUPPORTED_PATTERN,
 	}, nil
 }
 func (s *BodyContentSourceService) GetSourceItem(
