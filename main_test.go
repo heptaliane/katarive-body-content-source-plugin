@@ -24,7 +24,8 @@ func TestGetSourceServiceMetadata(t *testing.T) {
 	expected := &pb.GetSourceServiceMetadataResponse{
 		Name:             "body-content",
 		Version:          "v1",
-		SupportedPattern: "^https?://.*",
+		SupportedItemPattern: "^https?://.*",
+		SupportedCollectionPattern: "^https?://.*",
 	}
 
 	ctx := context.Background()
